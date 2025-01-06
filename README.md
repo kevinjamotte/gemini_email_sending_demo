@@ -12,5 +12,5 @@ This repository demonstrates how to use Google GenAI tools with Google email han
 1. Clone the repository.
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt```
+   pip install -r requirements.txt
 3. Open notebook_tutorial.ipynb to follow the tutorial.
