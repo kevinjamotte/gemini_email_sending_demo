@@ -51,7 +51,9 @@ def generate_email_content(model, name, surname, team_name):
 
     # Generate the subject of the email
     subject = model.generate_content(f"Write me the subject of this email:\n{body.text}")
-
+    print(subject.text)
+    print(body.text)
+    
     return subject.text, body.text  
 
 
