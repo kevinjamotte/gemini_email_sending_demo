@@ -9,18 +9,33 @@ from googleapiclient.errors import HttpError  # type: ignore
 import base64
 import random
 from email.mime.text import MIMEText
-
+# Define the full path to the JSON file
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
+TOKEN_FILE = os.path.join(os.path.dirname(__file__), "token.json")
+CREDENTIALS_FILE = os.path.join(os.path.dirname(__file__), "credentials.json")
 phishing_examples = [
-    {"Reason": "Account Suspicious Activity", "Fake Link": "https://example.com/secure-login", "Created By": "Sam Sussy"},
-    {"Reason": "Password Expiry Notification", "Fake Link": "https://example.com/reset-password", "Created By": "Sally Sneaky"},
-    {"Reason": "Exclusive Training Webinar", "Fake Link": "https://example.com/join-webinar", "Created By": "Richard Rascal"},
-    {"Reason": "Email Storage Full", "Fake Link": "https://example.com/manage-storage", "Created By": "Bernard Bandit"}
+    #{"Reason": "Account Suspicious Activity", "Fake Link": "http://landing-page.com", "Created By": "Sam Sussy", "id" : " 1"},
+    #{"Reason": "Password Expiry Notification", "Fake Link": "http://landing-page.com", "Created By": "Sally Sneaky", "id" : "2"},
+    #{"Reason": "Exclusive Training Webinar", "Fake Link": "http://landing-page.com", "Created By": "Richard Rascal", "id" : "3"},
+    #{"Reason": "Email Storage Full", "Fake Link": "http://landing-page.com", "Created By": "Bernard Bandit", "id" : "4"},
+    {"Reason": "Team Gathering Invitation", "Fake Link": "http://landing-page.com", "Created By": "Paul Ploy", "id" : "6"},
+    {"Reason": "Upcoming Meeting Notice", "Fake Link": "http://landing-page.com", "Created By": "Olivia Opportunist", "id" : "7"},
 ]
 
-# Define the full path to the JSON file
-CONFIG_FILE = "c:/Users/kevin/Documents/GitHub/email-generative-ai/gemini_email_sending_demo/config.json"
-TOKEN_FILE = "c:/Users/kevin/Documents/GitHub/email-generative-ai/gemini_email_sending_demo/token.json"
-CREDENTIALS_FILE = "credentials.json"
+
+
+recipients = [
+    {"email": "wout.vanaert.visma@proton.me", "name": "Wout Van Aert", "position": "Contact Center Agent"},
+    {"email": "remco.evenepoel.soudal@proton.me", "name": "Remco Evenepoel", "position": "Customer Service Specialist"},
+    {"email": "tadej.pogacar.uae@proton.me", "name": "Tadej Pogacar", "position": "Sales Advisor"},
+    {"email": "arnaud.de.lie.lotto@proton.me", "name": "Arnaud De Lie", "position": "B2B Sales Representative"},
+    {"email": "mathieu.vanderpoel.alpecin@proton.me", "name": "Mathieu Van Der Poel", "position": "Senior Legal Advisor"},
+    {"email": "julian.alaphilippe.tudor@proton.me", "name": "Julian Alaphilippe", "position": "Payroll Officer"},
+    {"email": "tom.pidcock.q365@proton.me", "name": "Tom Pidcock", "position": "Compensation & Benefits Specialist"},
+    {"email": "ben.oconnor.decathlon@proton.me", "name": "Ben O'Connor", "position": "Finance Business Partner"},
+    {"email": "jonas.vinegegaard.visma@proton.me", "name": "Jonas Vingegaard", "position": "Finance Specialist"},
+    {"email": "victor.campenaerts@proton.me", "name": "Victor Campenaerts", "position": "Technical Dispatching"}
+]
 
 # Load configuration
 def load_config(config_file):
@@ -36,16 +51,21 @@ def initialize_genai(api_key):
     return genai.GenerativeModel('gemini-pro')
 
 # Generate email content
-def generate_email_content(model, name, surname, team_name):
+def generate_email_content(model, name, surname, position):
     # Take a random reason from phishing examples
     random_pick = random.choice(phishing_examples)
 
     # Formulate the prompt, avoiding placeholders like [topic] and [date]
-    prompt = f"""Write a professional, well-crafted email from {random_pick["Created By"]} to {name} {surname} from the {team_name} team. 
+    prompt = f"""Write a professional, well-crafted email from {random_pick["Created By"]} to {name} {surname}, who is a {position}. 
     The email should be about the theme: {random_pick["Reason"]}. 
     The recipient will need to click on this link: {random_pick["Fake Link"]}.
-    The email should not contain any placeholders like [Date and Time] or [Target Audience]. 
-    It should sound professional, persuasive, and urgent, making it look like an email ready to send."""
+    The email should:
+    * Sound professional, persuasive, and urgent.
+    * Be free of placeholders like '[Date and Time]' or '[Target Audience]' or ['Date'], if talking about time, use 'next week'.
+    * Be completely free of any placeholders or brackets (e.g., '[]','()').
+    * Appear ready to be sent immediately.
+
+  Provide the email content directly. Do not include any additional instructions or formatting."""
     # Generate the body of the email using the correct method
     body = model.generate_content(prompt)
 
@@ -55,7 +75,6 @@ def generate_email_content(model, name, surname, team_name):
     print(body.text)
     
     return subject.text, body.text  
-
 
 # Create a message for an email
 def create_message(sender, to, subject, message_text):
@@ -95,14 +114,15 @@ def main():
     SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
     service = get_gmail_service(SCOPES, TOKEN_FILE, CREDENTIALS_FILE)
 
-    name = input("Enter the recipient's first name: ")
-    surname = input("Enter the recipient's surname: ")
-    email = input("Enter the recipient's email address: ")
-    team_name = input("Enter the recipient's team name: ")
+    for recipient in recipients:
+        name = recipient["name"].split()[0]
+        surname = " ".join(recipient["name"].split()[1:])
+        email = recipient["email"]
+        position = recipient["position"]
 
-    subject, body = generate_email_content(model, name, surname, team_name)
-    message = create_message("me", email, subject, body)
-    send_message(service, "me", message)
+        subject, body = generate_email_content(model, name, surname, position)
+        message = create_message("me", email, subject, body)
+        send_message(service, "me", message)
 
 if __name__ == "__main__":
     main()
